@@ -24,12 +24,12 @@ The performance data below was measured on a server with MI300X accelerators wit
 |---|---|
 | BKC | 24.13 |
 | ROCm | version ROCm 6.3 |
-| amdgpu | build 2009461 |
+| amdgpu | build 2041575 |
 | OS | Ubuntu 22.04 |
-| Linux Kernel | 5.15.0-117-generic |
-| BMCVersion | C2789.BC.0809.00 |
-| BiosVersion | C2789.5.BS.1C11.AG.1 |
-| CpldVersion | 02.02.00 |
+| Linux Kernel | 5.15.0-70-generic |
+| BMCVersion | C2789.BC.0811.00 |
+| BiosVersion | C2789.5.BS.1C17.GN.1 |
+| CpldVersion | 02.03.00 |
 | DCSCMCpldVersion | 02.02.00 |
 | CX7 | FW 28.40.1000 |
 | RAM | 1 TB |
