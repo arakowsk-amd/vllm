@@ -261,7 +261,8 @@ Benchmark Meta-Llama-3.1-405B FP8 with input 128 tokens, output 128 tokens and t
     --num-scheduler-steps 10 \
     --tensor-parallel-size 8 \
     --input-len 128 \
-    --output-len 128 
+    --output-len 128 \
+    --enable-chunked-prefill false
 
 If you want to run Meta-Llama-3.1-405B FP16, please run
 
@@ -278,9 +279,7 @@ If you want to run Meta-Llama-3.1-405B FP16, please run
     --swap-space 16 \
     --max-model-len 8192 \
     --max-num-batched-tokens 65536 \
-    --swap-space
-    --max-model-len
-    --gpu-memory-utilization 0.99
+    --enable-chunked-prefill false
 
 For fp8 quantized Llama3.18B/70B models:
 
