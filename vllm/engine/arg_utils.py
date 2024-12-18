@@ -99,7 +99,6 @@ class EngineArgs:
     config_format: ConfigFormat = ConfigFormat.AUTO
     dtype: str = 'auto'
     kv_cache_dtype: str = 'auto'
-    quantization_param_path: Optional[str] = None
     seed: int = 0
     max_model_len: Optional[int] = None
     worker_use_ray: bool = False
@@ -122,7 +121,7 @@ class EngineArgs:
     cpu_offload_gb: float = 0  # GiB
     gpu_memory_utilization: float = 0.90
     max_num_batched_tokens: Optional[int] = None
-    max_num_seqs: int = 256
+    max_num_seqs: Optional[int] = None
     max_logprobs: int = 20  # Default value for OpenAI Chat Completions API
     disable_log_stats: bool = False
     revision: Optional[str] = None
@@ -143,6 +142,7 @@ class EngineArgs:
     tokenizer_pool_extra_config: Optional[Dict[str, Any]] = None
     limit_mm_per_prompt: Optional[Mapping[str, int]] = None
     mm_processor_kwargs: Optional[Dict[str, Any]] = None
+    mm_cache_preprocessor: bool = False
     enable_lora: bool = False
     enable_lora_bias: bool = False
     max_loras: int = 1
@@ -169,6 +169,7 @@ class EngineArgs:
     enable_chunked_prefill: Optional[bool] = None
 
     guided_decoding_backend: str = 'xgrammar'
+    logits_processor_pattern: Optional[str] = None
     # Speculative decoding configuration.
     speculative_model: Optional[str] = None
     speculative_model_quantization: Optional[str] = None
@@ -196,6 +197,7 @@ class EngineArgs:
     worker_cls: str = "auto"
 
     kv_transfer_config: Optional[KVTransferConfig] = None
+    calculate_kv_scales: Optional[bool] = None
 
     def __post_init__(self):
         if not self.tokenizer:
@@ -205,6 +207,9 @@ class EngineArgs:
         # by user.
         if self.enable_prefix_caching is None:
             self.enable_prefix_caching = bool(envs.VLLM_USE_V1)
+        # Override max_num_seqs if it's not set by user.
+        if self.max_num_seqs is None:
+            self.max_num_seqs = 256 if not envs.VLLM_USE_V1 else 1024
 
         # support `EngineArgs(compilation_config={...})`
         # without having to manually construct a
@@ -342,17 +347,6 @@ class EngineArgs:
             help='Data type for kv cache storage. If "auto", will use model '
             'data type. CUDA 11.8+ supports fp8 (=fp8_e4m3) and fp8_e5m2. '
             'ROCm (AMD GPU) supports fp8 (=fp8_e4m3)')
-        parser.add_argument(
-            '--quantization-param-path',
-            type=nullable_str,
-            default=None,
-            help='Path to the JSON file containing the KV cache '
-            'scaling factors. This should generally be supplied, when '
-            'KV cache dtype is FP8. Otherwise, KV cache scaling factors '
-            'default to 1.0, which may cause accuracy issues. '
-            'FP8_E5M2 (without scaling) is only supported on cuda version '
-            'greater than 11.8. On ROCm (AMD GPU), FP8_E4M3 is instead '
-            'supported for common inference criteria.')
         parser.add_argument('--max-model-len',
                             type=int,
                             default=EngineArgs.max_model_len,
@@ -370,6 +364,14 @@ class EngineArgs:
             'https://github.com/noamgat/lm-format-enforcer.'
             ' Can be overridden per request via guided_decoding_backend'
             ' parameter.')
+        parser.add_argument(
+            '--logits-processor-pattern',
+            type=nullable_str,
+            default=None,
+            help='Optional regex pattern specifying valid logits processor '
+            'qualified names that can be passed with the `logits_processors` '
+            'extra completion argument. Defaults to None, which allows no '
+            'processors.')
         # Parallel arguments
         parser.add_argument(
             '--distributed-executor-backend',
@@ -412,7 +414,7 @@ class EngineArgs:
         parser.add_argument('--block-size',
                             type=int,
                             default=EngineArgs.block_size,
-                            choices=[8, 16, 32, 64, 128],
+                            choices=[8, 16, 32],
                             help='Token block size for contiguous chunks of '
                             'tokens. This is ignored on neuron devices and '
                             'set to max-model-len')
@@ -590,6 +592,12 @@ class EngineArgs:
             type=json.loads,
             help=('Overrides for the multimodal input mapping/processing, '
                   'e.g., image processor. For example: {"num_crops": 4}.'))
+        parser.add_argument(
+            '--mm-cache-preprocessor',
+            action='store_true',
+            help='If true, then enables caching of the multi-modal '
+            'preprocessor/mapper. Otherwise, the mapper executes each time'
+            ', and for better performance consider enabling frontend process.')
 
         # LoRA related configs
         parser.add_argument('--enable-lora',
@@ -890,7 +898,7 @@ class EngineArgs:
             '--override-pooler-config',
             type=PoolerConfig.from_json,
             default=None,
-            help="Override or set the pooling method in the embedding model. "
+            help="Override or set the pooling method for pooling models. "
             "e.g. {\"pooling_type\": \"mean\", \"normalize\": false}.'")
 
         parser.add_argument('--compilation-config',
@@ -922,6 +930,15 @@ class EngineArgs:
             default="auto",
             help='The worker class to use for distributed execution.')
 
+        parser.add_argument(
+            '--calculate-kv-scales',
+            action='store_true',
+            help='This enables dynamic calculation of '
+            'k_scale and v_scale when kv-cache-dtype is fp8. '
+            'If calculate-kv-scales is false, the scales will '
+            'be loaded from the model checkpoint if available. '
+            'Otherwise, the scales will default to 1.0.')
+
         return parser
 
     @classmethod
@@ -951,7 +968,6 @@ class EngineArgs:
             tokenizer_revision=self.tokenizer_revision,
             max_model_len=self.max_model_len,
             quantization=self.quantization,
-            quantization_param_path=self.quantization_param_path,
             enforce_eager=self.enforce_eager,
             max_seq_len_to_capture=self.max_seq_len_to_capture,
             max_logprobs=self.max_logprobs,
@@ -962,9 +978,10 @@ class EngineArgs:
             use_async_output_proc=not self.disable_async_output_proc,
             config_format=self.config_format,
             mm_processor_kwargs=self.mm_processor_kwargs,
+            mm_cache_preprocessor=self.mm_cache_preprocessor,
             override_neuron_config=self.override_neuron_config,
             override_pooler_config=self.override_pooler_config,
-        )
+            logits_processor_pattern=self.logits_processor_pattern)
 
     def create_load_config(self) -> LoadConfig:
         return LoadConfig(
@@ -1026,6 +1043,7 @@ class EngineArgs:
             sliding_window=model_config.get_sliding_window(),
             enable_prefix_caching=self.enable_prefix_caching,
             cpu_offload_gb=self.cpu_offload_gb,
+            calculate_kv_scales=self.calculate_kv_scales,
         )
         parallel_config = ParallelConfig(
             pipeline_parallel_size=self.pipeline_parallel_size,
@@ -1063,7 +1081,7 @@ class EngineArgs:
                 if (is_gpu and not use_sliding_window and not use_spec_decode
                         and not self.enable_lora
                         and not self.enable_prompt_adapter
-                        and model_config.task != "embedding"
+                        and model_config.runner_type != "pooling"
                         and not current_platform.is_rocm()):
                     self.enable_chunked_prefill = True
                     logger.warning(
@@ -1081,8 +1099,9 @@ class EngineArgs:
                 "errors during the initial memory profiling phase, or result "
                 "in low performance due to small KV cache space. Consider "
                 "setting --max-model-len to a smaller value.", max_model_len)
-        elif self.enable_chunked_prefill and model_config.task == "embedding":
-            msg = "Chunked prefill is not supported for embedding models"
+        elif (self.enable_chunked_prefill
+              and model_config.runner_type == "pooling"):
+            msg = "Chunked prefill is not supported for pooling models"
             raise ValueError(msg)
 
 
@@ -1142,7 +1161,7 @@ class EngineArgs:
                 " please file an issue with detailed information.")
 
         scheduler_config = SchedulerConfig(
-            task=model_config.task,
+            runner_type=model_config.runner_type,
             max_num_batched_tokens=self.max_num_batched_tokens,
             max_num_seqs=self.max_num_seqs,
             max_model_len=model_config.max_model_len,
@@ -1226,19 +1245,19 @@ class EngineArgs:
         """
         assert envs.VLLM_USE_V1, "V1 is not enabled"
 
+        # V1 always uses chunked prefills.
+        self.enable_chunked_prefill = True
+        # When no user override, set the default values based on the usage
+        # context.
+        # TODO(woosuk): Tune the default values for different hardware.
         if self.max_num_batched_tokens is None:
-            # When no user override, set the default values based on the
-            # usage context.
             if usage_context == UsageContext.LLM_CLASS:
-                logger.warning("Setting max_num_batched_tokens to 8192 "
-                               "for LLM_CLASS usage context.")
-                self.max_num_seqs = 1024
                 self.max_num_batched_tokens = 8192
             elif usage_context == UsageContext.OPENAI_API_SERVER:
-                logger.warning("Setting max_num_batched_tokens to 2048 "
-                               "for OPENAI_API_SERVER usage context.")
-                self.max_num_seqs = 1024
                 self.max_num_batched_tokens = 2048
+            logger.warning(
+                "Setting max_num_batched_tokens to %d for %s usage context.",
+                self.max_num_batched_tokens, usage_context.value)
 
     def _override_v1_engine_config(self, engine_config: VllmConfig) -> None:
         """

@@ -34,8 +34,9 @@ void paged_attention_v1(
     torch::Tensor& value_cache, int64_t num_kv_heads, double scale,
     torch::Tensor& block_tables, torch::Tensor& seq_lens, int64_t block_size,
     int64_t max_seq_len, const c10::optional<torch::Tensor>& alibi_slopes,
-    const std::string& kv_cache_dtype, double k_scale, double v_scale,
-    const int64_t tp_rank, const int64_t blocksparse_local_blocks,
+    const std::string& kv_cache_dtype, torch::Tensor& k_scale,
+    torch::Tensor& v_scale, const int64_t tp_rank,
+    const int64_t blocksparse_local_blocks,
     const int64_t blocksparse_vert_stride, const int64_t blocksparse_block_size,
     const int64_t blocksparse_head_sliding_step, const int64_t num_threads);
 
@@ -45,8 +46,9 @@ void paged_attention_v2(
     torch::Tensor& value_cache, int64_t num_kv_heads, double scale,
     torch::Tensor& block_tables, torch::Tensor& seq_lens, int64_t block_size,
     int64_t max_seq_len, const c10::optional<torch::Tensor>& alibi_slopes,
-    const std::string& kv_cache_dtype, double k_scale, double v_scale,
-    const int64_t tp_rank, const int64_t blocksparse_local_blocks,
+    const std::string& kv_cache_dtype, torch::Tensor& k_scale,
+    torch::Tensor& v_scale, const int64_t tp_rank,
+    const int64_t blocksparse_local_blocks,
     const int64_t blocksparse_vert_stride, const int64_t blocksparse_block_size,
     const int64_t blocksparse_head_sliding_step, const int64_t num_threads);
 
@@ -65,6 +67,14 @@ void fused_add_rms_norm_static_fp8_quant(torch::Tensor& out,
                                          torch::Tensor& residual,
                                          torch::Tensor& weight,
                                          torch::Tensor& scale, double epsilon);
+
+void rms_norm_dynamic_per_token_quant(torch::Tensor& out,
+                                      torch::Tensor const& input,
+                                      torch::Tensor const& weight,
+                                      torch::Tensor& scales,
+                                      double const epsilon,
+                                      std::optional<torch::Tensor> scale_ub,
+                                      std::optional<torch::Tensor> residual);
 
 void rotary_embedding(torch::Tensor& positions, torch::Tensor& query,
                       torch::Tensor& key, int64_t head_size,
