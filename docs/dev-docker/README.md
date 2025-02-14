@@ -357,7 +357,6 @@ docker run -it --rm --ipc=host --network=host --group-add render \
     --cap-add=CAP_SYS_ADMIN --cap-add=SYS_PTRACE \
     --device=/dev/kfd --device=/dev/dri --device=/dev/mem \
     -e VLLM_USE_TRITON_FLASH_ATTN=0 \
-    -e VLLM_FP8_PADDING=0 \
     rocm/vllm-dev:main
 # Online serving
 vllm serve deepseek-ai/DeepSeek-V3 \
