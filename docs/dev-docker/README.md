@@ -22,7 +22,7 @@ Pull the most recent validated docker image with `docker pull rocm/vllm-dev:main
 ## What is New
 
 - [Improved DeepSeek-V3 and DeepSeek-R1 support](#running-deepseek-v3-and-deepseek-r1)
-- Inital Gemma-3 enablement
+- Initial Gemma-3 enablement
 - Detokenizer disablement
 - Torch.compile support
 
@@ -506,7 +506,7 @@ Use AITER release candidate branch instead:
 
 20250325_aiter:
 - Improved DeepSeek-V3/R1 performance
-- Inital Gemma-3 enablement
+- Initial Gemma-3 enablement
 - Detokenizer disablement
 - Torch.compile support
 
