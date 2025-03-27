@@ -21,15 +21,15 @@ Pull the most recent validated docker image with `docker pull rocm/vllm-dev:main
 
 ## What is New
 
-- [Experimental AITER support](#aiter-use-cases)
-- [Experimental DeepSeek-V3 and DeepSeek-R1 support](#running-deepseek-v3-and-deepseek-r1)
-- Performance improvement for custom paged attention
-- Support for FP8 skinny GEMM
-- Bug fixes
+- [Improved DeepSeek-V3 and DeepSeek-R1 support](#running-deepseek-v3-and-deepseek-r1)
+- Inital Gemma-3 enablement
+- Detokenizer disablement
+- Torch.compile support
 
 ## Performance Results
 
 The data in the following tables is a reference point to help users validate observed performance. It should not be considered as the peak performance that can be delivered by AMD Instinct™ MI300X accelerator with vLLM. See the MLPerf section in this document for information about MLPerf 4.1 inference results. The performance numbers above were collected using the steps below.
+*Note Benchmarks were run with benchmark scripts from [v0.6.5](https://github.com/vllm-project/vllm/tree/v0.6.5/benchmarks)*
 
 ### Throughput Measurements
 
@@ -499,6 +499,12 @@ Use AITER release candidate branch instead:
 ```
 
 ## Changelog
+
+20250325_aiter:
+- Improved DeepSeek-V3/R1 performance
+- Inital Gemma-3 enablement
+- Detokenizer disablement
+- Torch.compile support
 
 20250305_aiter:
 - AITER improvements
