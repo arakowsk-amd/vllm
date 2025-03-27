@@ -352,15 +352,18 @@ docker run -it --rm --ipc=host --network=host --group-add render \
     --privileged --security-opt seccomp=unconfined \
     --cap-add=CAP_SYS_ADMIN --cap-add=SYS_PTRACE \
     --device=/dev/kfd --device=/dev/dri --device=/dev/mem \
-    -e VLLM_USE_TRITON_FLASH_ATTN=0 \
-    -e  VLLM_MLA_DISABLE=1 \
+    -e VLLM_USE_TRITON_FLASH_ATTN=1 \
+    -e VLLM_USE_AITER=1 \
+    -e  VLLM_MLA_DISABLE=0 \
     rocm/vllm-dev:main
+
 # Online serving
 vllm serve deepseek-ai/DeepSeek-V3 \
     --disable-log-requests \
     --tensor-parallel-size 8 \
     --trust-remote-code \
-    --max-model-len 32768 
+    --max-model-len 131072 \
+    --block-size=1 
 
 python3 /app/vllm/benchmarks/benchmark_serving.py \
     --backend vllm \
@@ -375,10 +378,11 @@ python3 /app/vllm/benchmarks/benchmark_serving.py \
 python3 /app/vllm/benchmarks/benchmark_throughput.py --model deepseek-ai/DeepSeek-V3 \
     --input-len <> --output-len <> --tensor-parallel-size 8 \
     --quantization fp8 --kv-cache-dtype fp8 --dtype float16 \
-    --max-model-len 32768 --trust-remote-code
+    --max-model-len 32768 --block-size=1 --trust-remote-code
+
 # Offline Latency
-python benchmarks/benchmark_latency.py --model deepseek-ai/DeepSeek-V3 \
---tensor-parallel-size 8 --trust-remote-code --max-model-len 32768 \
+python /app/vllm/benchmarks/benchmark_latency.py --model deepseek-ai/DeepSeek-V3 \
+--tensor-parallel-size 8 --trust-remote-code --max-model-len 32768 --block-size=1 \
 --batch-size <> --input-len <> --output-len <>
 ```
 
