@@ -37,7 +37,7 @@ The table below shows performance data where a local inference client is fed req
 
 | Model | Precision | TP Size | Input | Output | Num Prompts | Max Num Seqs | Throughput (tokens/s) |
 |-------|-----------|---------|-------|--------|-------------|--------------|-----------------------|
-| Llama 3.1 70B (amd/Llama-3.1-70B-Instruct-FP8-KV) | FP8 | 8 | 128 | 2048 | 3200 | 3200 | 15919.0  |
+| Llama 3.1 70B (amd/Llama-3.1-70B-Instruct-FP8-KV) | FP8 | 8 | 128 | 2048 | 3200 | 3200 | 15684.7  |
 |       |           |         | 128   | 4096   | 1500        | 1500         | 11761.5               |
 |       |           |         | 500   | 2000   | 2000        | 2000         | 12895.9               |
 |       |           |         | 2048  | 2048   | 1500        | 1500         | 8380.7                |
