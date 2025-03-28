@@ -41,7 +41,7 @@ The table below shows performance data where a local inference client is fed req
 |       |           |         | 128   | 4096   | 1500        | 1500         | 11761.5               |
 |       |           |         | 500   | 2000   | 2000        | 2000         | 12895.9               |
 |       |           |         | 2048  | 2048   | 1500        | 1500         | 8380.7                |
-| Llama 3.1 405B (amd/Llama-3.1-405B-Instruct-FP8-KV) | FP8 | 8 | 128 | 2048 | 1500 | 1500 | 4219.7 |
+| Llama 3.1 405B (amd/Llama-3.1-405B-Instruct-FP8-KV) | FP8 | 8 | 128 | 2048 | 1500 | 1500 | 4218.6 |
 |       |           |         | 128   | 4096   | 1500        | 1500         | 3326.2                |
 |       |           |         | 500   | 2000   | 2000        | 2000         | 3113.4                |
 |       |           |         | 2048  | 2048   | 500         | 500          | 2112.1                |
@@ -54,7 +54,7 @@ The table below shows latency measurement, which typically involves assessing th
 
 | Model | Precision | TP Size | Batch Size | Input | Output | MI300X Latency (sec) |
 |-------|-----------|----------|------------|--------|---------|-------------------|
-| Llama 3.1 70B (amd/Llama-3.1-70B-Instruct-FP8-KV) | FP8 | 8 | 1 | 128 | 2048 | 17.654 |
+| Llama 3.1 70B (amd/Llama-3.1-70B-Instruct-FP8-KV) | FP8 | 8 | 1 | 128 | 2048 | 17.662 |
 | | | | 2 | 128 | 2048 | 18.768 |
 | | | | 4 | 128 | 2048 | 19.282 |
 | | | | 8 | 128 | 2048 | 20.943  |
@@ -70,7 +70,7 @@ The table below shows latency measurement, which typically involves assessing th
 | | | | 32 | 2048 | 2048 | 29.640 |
 | | | | 64 | 2048 | 2048 | 41.029 |
 | | | | 128 | 2048 | 2048 | 63.717 |
-| Llama 3.1 405B (amd/Llama-3.1-70B-Instruct-FP8-KV) | FP8 | 8 | 1 | 128 | 2048 | 46.632 |
+| Llama 3.1 405B (amd/Llama-3.1-70B-Instruct-FP8-KV) | FP8 | 8 | 1 | 128 | 2048 | 46.779 |
 | | | | 2 | 128 | 2048 | 47.136 |
 | | | | 4 | 128 | 2048 | 49.045 |
 | | | | 8 | 128 | 2048 | 53.145 |
